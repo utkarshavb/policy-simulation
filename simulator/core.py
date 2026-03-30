@@ -2,25 +2,30 @@ import random
 import math
 
 class Agent:
-    def __init__(self, greed_level: float=0.0):
+    def __init__(self, greed_level: float=0.0, cost_multiplier: float=5):
         self.greed = greed_level
-        self.choices = [0.2, 0.8]
+        self.c = cost_multiplier
+        self.choices = [0.2, 1.2]
 
-    def get_harvest(self, tax_rate: float, H: float, rng: random.Random):
-        expected_rewards = [(1-tax_rate)*a*H for a in self.choices]
+    def get_harvest(self, tax_rate: float, fair_share: float, rng: random.Random):
+        harvest_choices = [fair_share*a for a in self.choices]
+        costs = [self.c*h**2 for h in harvest_choices]
+        taxes = [tax_rate*h for h in harvest_choices]
+        expected_rewards = [h-c-t for h, c, t in zip(harvest_choices, costs, taxes)]
         wts = [math.exp(r*self.greed) for r in expected_rewards]
-        harvest_rate = rng.choices(self.choices, weights=wts, k=1)[0]
-        harvest = harvest_rate * H
+        harvest = rng.choices(harvest_choices, weights=wts, k=1)[0]
         return harvest
 
 class CommonsSim:
     def __init__(
-        self, n_agents: int=10, seed: float=42, regrowth_rate: float=0.2, epsilon: float=0.05
+        self, n_agents: int=10, seed: float=42, regrowth_rate: float=0.2,
+        epsilon: float=0.05, cost_multiplier: float=5
     ):
         self.n_agents = n_agents
         self.seed = seed
         self.rng = random.Random(seed)
-        self.agents = [Agent(self.rng.random()) for _ in range(n_agents)]
+        self.c = cost_multiplier
+        self.agents = [Agent(self.rng.random(), self.c) for _ in range(n_agents)]
         self.H = 1.0
         self.regrowth_rate = regrowth_rate
         self.epsilon = epsilon
@@ -28,8 +33,8 @@ class CommonsSim:
     def reset(self):
         self.H = 1.0
         self.rng = random.Random(self.seed)
-        self.agents = [Agent(self.rng.random()) for _ in range(self.n_agents)]
-        obs = dict(field_health=self.H,avg_harvest=0.0, avg_reward=0.0)
+        self.agents = [Agent(self.rng.random(), self.c) for _ in range(self.n_agents)]
+        obs = dict(field_health=self.H, avg_harvest=0.0, avg_reward=0.0)
         return obs
 
     def _get_regrowth(self):
@@ -38,17 +43,19 @@ class CommonsSim:
         return regrowth
 
     def step(self, tax_rate: float):
-        individual_harvests = [
-            agent.get_harvest(tax_rate, self.H, rng=self.rng) for agent in self.agents
+        fair_share = self.H / self.n_agents
+        harvests = [
+            agent.get_harvest(tax_rate, fair_share, rng=self.rng) for agent in self.agents
         ]
-        tot_harvest = sum(individual_harvests)
+        tot_harvest = sum(harvests)
         if tot_harvest > self.H:
-            individual_harvests = [h*(self.H/tot_harvest) for h in individual_harvests]
+            harvests = [h*(self.H/tot_harvest) for h in harvests]
             tot_harvest = self.H
         
-        taxes = [tax_rate*h for h in individual_harvests]
+        taxes = [tax_rate*h for h in harvests]
+        costs = [self.c*h**2 for h in harvests]
         redistribution = sum(taxes) / self.n_agents
-        rewards = [(h-t)+redistribution for h, t in zip(individual_harvests, taxes)]
+        rewards = [h-c-t+redistribution for h, c, t in zip(harvests, costs, taxes)]
 
         self.H -= tot_harvest
         self.H += self._get_regrowth()
@@ -58,11 +65,10 @@ class CommonsSim:
 
         obs = dict(
             field_health=self.H,
-            avg_harvest=sum(individual_harvests)/self.n_agents,
+            avg_harvest=sum(harvests)/self.n_agents,
             avg_reward=sum(rewards)/self.n_agents
         )
         info = dict(
-            individual_harvests=individual_harvests, rewards=rewards,
-            redistribution=redistribution,
+            harvests=harvests, rewards=rewards, redistribution=redistribution, taxes=taxes
         )
         return obs, self.H, info
