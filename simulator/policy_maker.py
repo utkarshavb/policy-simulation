@@ -1,22 +1,21 @@
 class RuleBasedPolicymaker:
     def __init__(
-        self, target_health=0.7, target_harvest=0.45, reward_floor=0.08, k_h=0.6, k_a=0.3, k_r=0.4
+        self, target_health=0.5, target_harvest=0.045, min_reward=0.08,
+        health_wt=0.6, harvest_wt=0.3, reward_wt=0.4
     ):
         self.target_health = target_health
         self.target_harvest = target_harvest
-        self.reward_floor = reward_floor
-        self.k_h = k_h
-        self.k_a = k_a
-        self.k_r = k_r
+        self.min_reward = min_reward
+        self.health_wt = health_wt
+        self.harvest_wt = harvest_wt
+        self.reward_wt = reward_wt
         self.tax = 0.3
 
     def act(self, field_health, avg_harvest, avg_reward):
         delta = (
-            self.k_h * (self.target_health - field_health)
-            + self.k_a * (avg_harvest - self.target_harvest)
-            - self.k_r * max(0.0, self.reward_floor - avg_reward)
+            self.health_wt * (self.target_health - field_health)
+            + self.harvest_wt * (avg_harvest - self.target_harvest)
+            - self.reward_wt * max(0.0, self.min_reward - avg_reward)
         )
-
-        # delta = max(-max_step, min(max_step, delta))
         self.tax = max(0.0, min(1.0, self.tax + delta))
         return self.tax
