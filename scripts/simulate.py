@@ -16,12 +16,11 @@ parser.add_argument("--disable-wandb", action="store_true", help="Whether to dis
 parser.add_argument("--regrowth-rate", type=float, default=1.45, help="Regrowth rate of the common resource")
 parser.add_argument("--cost-multiplier", type=float, default=7, help="Scaling factor for harvest cost")
 # rules-based policy-maker parameters
+parser.add_argument("--init-tax", type=float, default=0.3, help="Initial tax rate for the rule-based policymaker")
 parser.add_argument("--target-health", type=float, default=0.7, help="Target health level for the resource")
-parser.add_argument("--target-harvest", type=float, default=0.04, help="Target average harvest level for the agents")
 parser.add_argument("--min-reward", type=float, default=1.5, help="If average reward falls below this level, the policymaker will increase taxes")
-parser.add_argument("--health-wt", type=float, default=0.6, help="Weight for health deviation in policymaker's tax adjustment")
-parser.add_argument("--harvest-wt", type=float, default=0.3, help="Weight for harvest deviation in policymaker's tax adjustment")
-parser.add_argument("--reward-wt", type=float, default=0.4, help="Weight for reward deviation in policymaker's tax adjustment")
+parser.add_argument("--health-wt", type=float, default=0.8, help="Weight for health deviation in policymaker's tax adjustment")
+parser.add_argument("--reward-wt", type=float, default=0.2, help="Weight for reward deviation in policymaker's tax adjustment")
 # llm-based policy-maker parameters
 parser.add_argument("--model", type=str, default="gemma3:1b-it-qat", help="LLM model to use for policymaking")
 parser.add_argument("--base-url", type=str, default="http://localhost:11434", help="Base URL for Ollama API")
@@ -31,13 +30,13 @@ args = parser.parse_args()
 
 if not args.use_llm:
     policymaker = RuleBasedPolicymaker(
-        args.target_health, args.target_harvest, args.min_reward,
-        args.health_wt, args.harvest_wt, args.reward_wt
+        init_tax=args.init_tax, target_health=args.target_health,
+        min_reward=args.min_reward, health_wt=args.health_wt, reward_wt=args.reward_wt
     )
 else:
     policymaker = LLMPolicyMaker(
-        model=args.model, base_url=args.base_url, prompt_file=args.prompt_file,
-        temperature=args.temperature
+        model=args.model, base_url=args.base_url,
+        prompt_file=args.prompt_file, temperature=args.temperature
     )
 
 sim = CommonsSim(

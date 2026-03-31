@@ -4,20 +4,18 @@ import requests
 
 class RuleBasedPolicymaker:
     def __init__(
-        self, target_health=0.5, target_harvest=0.045, min_reward=0.08,
-        health_wt=0.6, harvest_wt=0.3, reward_wt=0.4
+        self, init_tax=0.3, target_health=0.7, min_reward=1.5, health_wt=0.8, reward_wt=0.2
     ):
+        self.tax = init_tax
         self.target_health, self.health_wt = target_health, health_wt
-        self.target_harvest, self.harvest_wt = target_harvest, harvest_wt
         self.min_reward, self.reward_wt = min_reward, reward_wt
-        self.tax = 0.3
 
     def act(self, field_health, avg_harvest, avg_reward):
-        delta = (
-            self.health_wt * (self.target_health - field_health)
-            + self.harvest_wt * (avg_harvest - self.target_harvest)
-            - self.reward_wt * max(0.0, self.min_reward - avg_reward)
-        )
+        """Increases tax if health is below target and decreases if rewards are below threshold"""
+        d_health = self.target_health - field_health
+        d_reward = self.min_reward - avg_reward
+        delta = self.health_wt*max(0.0, d_health) - self.reward_wt*max(0.0, d_reward)
+        delta = max(-0.01, min(0.01, delta))   # clamp delta for smooth variation of tax rate
         self.tax = max(0.0, min(1.0, self.tax + delta))
         return self.tax
 
