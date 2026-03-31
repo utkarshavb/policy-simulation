@@ -13,11 +13,11 @@ parser.add_argument("--use-llm", action="store_true", help="Whether to use the L
 parser.add_argument("--disable-wandb", action="store_true", help="Whether to disable WandB logging")
 # growth rate and cost
 parser.add_argument("--regrowth-rate", type=float, default=1.45, help="Regrowth rate of the common resource")
-parser.add_argument("--cost-multiplier", type=float, default=5, help="Scaling factor for harvest cost")
+parser.add_argument("--cost-multiplier", type=float, default=7, help="Scaling factor for harvest cost")
 # rules-based policy-maker parameters
-parser.add_argument("--target-health", type=float, default=0.5, help="Target health level for the resource")
+parser.add_argument("--target-health", type=float, default=0.7, help="Target health level for the resource")
 parser.add_argument("--target-harvest", type=float, default=0.04, help="Target average harvest level for the agents")
-parser.add_argument("--min-reward", type=float, default=0.015, help="If average reward falls below this level, the policymaker will increase taxes")
+parser.add_argument("--min-reward", type=float, default=1.5, help="If average reward falls below this level, the policymaker will increase taxes")
 parser.add_argument("--health-wt", type=float, default=0.6, help="Weight for health deviation in policymaker's tax adjustment")
 parser.add_argument("--harvest-wt", type=float, default=0.3, help="Weight for harvest deviation in policymaker's tax adjustment")
 parser.add_argument("--reward-wt", type=float, default=0.4, help="Weight for reward deviation in policymaker's tax adjustment")

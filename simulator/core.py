@@ -12,8 +12,14 @@ class Agent:
         costs = [self.c*h**2 for h in harvest_choices]
         taxes = [tax_rate*h for h in harvest_choices]
         expected_rewards = [h-c-t for h, c, t in zip(harvest_choices, costs, taxes)]
-        wts = [math.exp(r*self.greed) for r in expected_rewards]
+        expected_rewards = [100*r for r in expected_rewards]   # scale rewards to preserve variation after softmax
+
+        # softmax with greed as temperature
+        beta = 10 * self.greed   # scale greed for sharper preference
+        m = max(expected_rewards)
+        wts = [math.exp((r-m)*beta) for r in expected_rewards]
         harvest = rng.choices(harvest_choices, weights=wts, k=1)[0]
+
         return harvest
 
 class CommonsSim:
@@ -56,6 +62,7 @@ class CommonsSim:
         costs = [self.c*h**2 for h in harvests]
         redistribution = sum(taxes) / self.n_agents
         rewards = [h-c-t+redistribution for h, c, t in zip(harvests, costs, taxes)]
+        rewards = [100*r for r in rewards]   # reflect true agent rewards
         if self.H < 0.3:
             rewards = [0.5*r for r in rewards]
 
