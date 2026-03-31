@@ -22,7 +22,7 @@ parser.add_argument("--health-wt", type=float, default=0.6, help="Weight for hea
 parser.add_argument("--harvest-wt", type=float, default=0.3, help="Weight for harvest deviation in policymaker's tax adjustment")
 parser.add_argument("--reward-wt", type=float, default=0.4, help="Weight for reward deviation in policymaker's tax adjustment")
 # llm-based policy-maker parameters
-parser.add_argument("--model", type=str, default="gemma3n", help="LLM model to use for policymaking")
+parser.add_argument("--model", type=str, default="gemma3:1b-it-qat", help="LLM model to use for policymaking")
 parser.add_argument("--base-url", type=str, default="http://localhost:11434", help="Base URL for Ollama API")
 parser.add_argument("--prompt-file", type=str, default="simulator/prompt.txt", help="Path to prompt template file for LLM policymaker")
 parser.add_argument("--temperature", type=float, default=0.2, help="Temperature for LLM response generation")
