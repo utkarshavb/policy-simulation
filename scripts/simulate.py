@@ -13,12 +13,13 @@ parser.add_argument("--group", type=str, default="test", help="WandB group name 
 parser.add_argument("--use-llm", action="store_true", help="Whether to use the LLM-based policymaker instead of the rule-based one")
 parser.add_argument("--disable-wandb", action="store_true", help="Whether to disable WandB logging")
 # growth rate and cost
-parser.add_argument("--regrowth-rate", type=float, default=1.45, help="Regrowth rate of the common resource")
-parser.add_argument("--cost-multiplier", type=float, default=7, help="Scaling factor for harvest cost")
+parser.add_argument("--regrowth-rate", type=float, default=1.5, help="Regrowth rate of the common resource")
+parser.add_argument("--revenue-scalar", type=float, default=80, help="Scaling factor for harvest revenue")
+parser.add_argument("--cost-scalar", type=float, default=520, help="Scaling factor for harvest cost")
 # rules-based policy-maker parameters
-parser.add_argument("--init-tax", type=float, default=0.3, help="Initial tax rate for the rule-based policymaker")
-parser.add_argument("--target-health", type=float, default=0.7, help="Target health level for the resource")
-parser.add_argument("--min-reward", type=float, default=1.5, help="If average reward falls below this level, the policymaker will increase taxes")
+parser.add_argument("--init-tax", type=float, default=0.1, help="Initial tax rate for the rule-based policymaker")
+parser.add_argument("--target-health", type=float, default=0.8, help="Target health level for the resource")
+parser.add_argument("--min-reward", type=float, default=1.6, help="If average reward falls below this level, the policymaker will increase taxes")
 parser.add_argument("--health-wt", type=float, default=0.8, help="Weight for health deviation in policymaker's tax adjustment")
 parser.add_argument("--reward-wt", type=float, default=0.2, help="Weight for reward deviation in policymaker's tax adjustment")
 # llm-based policy-maker parameters
@@ -41,7 +42,7 @@ else:
 
 sim = CommonsSim(
     n_agents=args.n_agents, seed=args.seed, regrowth_rate=args.regrowth_rate,
-    cost_multiplier=args.cost_multiplier
+    revenue_scalar=args.revenue_scalar, cost_scalar=args.cost_scalar
 )
 obs = sim.reset()
 greed_str = ", ".join([f"{agent.greed:.3f}" for agent in sim.agents])

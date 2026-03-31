@@ -2,17 +2,23 @@ import random
 import math
 
 class Agent:
-    def __init__(self, greed_level: float=0.0, cost_multiplier: float=5):
+    """
+    Behaviour:
+        - Harvest is scaled by a "revenue scalar", reflecting the "revenue" generated from harvesting
+        - Concept of a "cost" is introduced which is convex in harvest amount, scaled by a "cost scalar"
+        - Agent softmax chooses between a "gentle" and "high" harvest (20% or 100% of fair share)
+        - Greed level acts as the softmax temperature, determining how strongly the agent prefers the higher harvest
+    """
+    def __init__(self, greed_level: float, revenue_scalar: float=100, cost_scalar: float=700):
         self.greed = greed_level
-        self.c = cost_multiplier
-        self.choices = [0.2, 1.2]
+        self.r = revenue_scalar
+        self.c = cost_scalar
+        self.choices = [0.2, 1.0]   # proportion of fair share to harvest
 
     def get_harvest(self, tax_rate: float, fair_share: float, rng: random.Random):
         harvest_choices = [fair_share*a for a in self.choices]
         costs = [self.c*h**2 for h in harvest_choices]
-        taxes = [tax_rate*h for h in harvest_choices]
-        expected_rewards = [h-c-t for h, c, t in zip(harvest_choices, costs, taxes)]
-        expected_rewards = [100*r for r in expected_rewards]   # scale rewards to preserve variation after softmax
+        expected_rewards = [self.r*(1-tax_rate)*h - c for h, c in zip(harvest_choices, costs)]
 
         # softmax with greed as temperature
         beta = 10 * self.greed   # scale greed for sharper preference
@@ -24,20 +30,22 @@ class Agent:
 
 class CommonsSim:
     def __init__(
-        self, n_agents: int=10, seed: float=42, regrowth_rate: float=0.2, cost_multiplier: float=5
+        self, n_agents: int=10, seed: float=42, regrowth_rate: float=0.2,
+        revenue_scalar: float=100, cost_scalar: float=700
     ):
         self.n_agents = n_agents
         self.seed = seed
         self.rng = random.Random(seed)
-        self.c = cost_multiplier
-        self.agents = [Agent(self.rng.random(), self.c) for _ in range(n_agents)]
+        self.r = revenue_scalar
+        self.c = cost_scalar
+        self.agents = [Agent(self.rng.random(), self.r, self.c) for _ in range(n_agents)]
         self.H = 1.0
         self.regrowth_rate = regrowth_rate
     
     def reset(self):
         self.H = 1.0
         self.rng = random.Random(self.seed)
-        self.agents = [Agent(self.rng.random(), self.c) for _ in range(self.n_agents)]
+        self.agents = [Agent(self.rng.random(), self.r,self.c) for _ in range(self.n_agents)]
         obs = dict(field_health=self.H, avg_harvest=0.0, avg_reward=0.0)
         return obs
 
@@ -58,11 +66,10 @@ class CommonsSim:
         self.H = min(self.H, 1.0)
 
         # calculate rewards
-        taxes = [tax_rate*h for h in harvests]
+        taxes = [self.r*tax_rate*h for h in harvests]
         costs = [self.c*h**2 for h in harvests]
         redistribution = sum(taxes) / self.n_agents
-        rewards = [h-c-t+redistribution for h, c, t in zip(harvests, costs, taxes)]
-        rewards = [100*r for r in rewards]   # reflect true agent rewards
+        rewards = [self.r*h-c-t+redistribution for h, c, t in zip(harvests, costs, taxes)]
         if self.H < 0.3:
             rewards = [0.5*r for r in rewards]
 
