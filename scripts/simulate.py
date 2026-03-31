@@ -9,6 +9,7 @@ parser.add_argument("--n-agents", type=int, default=10)
 parser.add_argument("--steps", type=int, default=150)
 parser.add_argument("--seed", type=int, default=42)
 parser.add_argument("--run", type=str, default=None, help="WandB run name for logging")
+parser.add_argument("--group", type=str, default="test", help="WandB group name for logging")
 parser.add_argument("--use-llm", action="store_true", help="Whether to use the LLM-based policymaker instead of the rule-based one")
 parser.add_argument("--disable-wandb", action="store_true", help="Whether to disable WandB logging")
 # growth rate and cost
@@ -48,9 +49,8 @@ greed_str = ", ".join([f"{agent.greed:.3f}" for agent in sim.agents])
 print(f"greed levels of agents: {greed_str}")
 
 if not args.disable_wandb:
-    group = "rule-based" if not args.use_llm else "llm-based"
     run = wandb.init(
-        project="policy-simulation", name=args.run, group=group, config=vars(args)
+        project="policy-simulation", name=args.run, group=args.group, config=vars(args)
     )
 else:
     run = None

@@ -1,5 +1,6 @@
 #!/bin/bash
 
+GROUP=${GROUP:-"test"}
 # number of seeds
 SEEDS=(8 39 45 69 224)
 
@@ -8,7 +9,8 @@ for SEED in "${SEEDS[@]}"
 do
   python scripts/simulate.py \
     --seed $SEED \
-    --run rule_seed${SEED}
+    --run rule_seed${SEED} \
+    --group "$GROUP"
 done
 
 echo "Running LLM policymaker experiments..."
@@ -17,7 +19,8 @@ do
   python scripts/simulate.py \
     --use-llm \
     --seed $SEED \
-    --run llm_seed${SEED}
+    --run llm_seed${SEED} \
+    --group "$GROUP"
 done
 
 echo "All experiments completed."
